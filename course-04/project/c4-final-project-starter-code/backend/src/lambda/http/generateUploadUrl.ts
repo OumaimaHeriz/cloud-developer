@@ -1,40 +1,25 @@
-import 'source-map-support/register';
+import 'source-map-support/register'
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import * as middy from 'middy'
-import { cors, httpErrorHandler } from 'middy/middlewares'
+import {APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler} from 'aws-lambda'
+import {GenerateUploadUrl} from "../../helpers/todos";
 
-import { createAttachmentPresignedUrl } from '../../helpers/businessLogic'
-import { getUserId } from '../utils'
 
-export const handler = middy(
-	async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-		const todoId = event.pathParameters.todoId
-		// TODO: Return a presigned URL to upload a file for a TODO item with the provided id
-		try {
-			const userId = getUserId(event);
-			const data = await createAttachmentPresignedUrl(todoId, userId)
-	
-			return{
-				statusCode: 200,
-				body: JSON.stringify({
-					uploadUrl: data
-				})
-			}
-		}
-		catch (error) {
-			return{
-                statusCode: 500,
-                body: "Request failed"
-            }
-		}
-	}
-)
+export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
-handler
-  .use(httpErrorHandler())
-  .use(
-    cors({
-      credentials: true
-    })
-  )
+    // TODO: Return a presigned URL to upload a file for a TODO item with the provided id
+
+    console.log("Processing Event ", event);
+
+    const todoId = event.pathParameters.todoId;
+    const returnUrl = await GenerateUploadUrl(todoId);
+
+    return {
+        statusCode: 202,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+            uploadUrl: returnUrl,
+        })
+    };
+};
